@@ -1,0 +1,39 @@
+#!/bin/bash
+
+function usage() {
+    echo "usage: $0 [home|uni|rud|schu]"
+}
+
+if [ $# -eq 1 ]; then
+    if [ $1 == "home" -o $1 == "uni" -o $1 == "rud" -o $1 == "schu" ]; then
+        echo "configuring wlan for $1"
+    else
+        usage
+        exit 0
+    fi
+else
+    usage
+    exit 0
+fi
+
+# wpa_supplicant anwerfen
+sudo wpa_supplicant -ieth1 -c/etc/wpa_supplicant.conf -B
+
+# interface auf die richtige ssid setzen
+if [ $1 == "home" ]; then
+    sudo iwconfig eth1 essid middleearth
+elif [ $1 == "uni" ]; then
+    sudo iwconfig eth1 essid WLAN-BUW
+elif [ $1 == "rud" ]; then
+    sudo iwconfig eth1 essid scheibenwelt
+elif [ $1 == "schu" ]; then
+    sudo iwconfig eth1 essid calvin
+else
+    # sollte eigentlich nie auftreten!
+    echo "BAD PARAMETER: $1"
+    exit 0
+fi
+
+# adresse per dhcp anfordern
+sudo dhclient eth1
+

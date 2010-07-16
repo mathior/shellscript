@@ -1,0 +1,7 @@
+#!/bin/sh
+
+list=orange,apple,banana
+case ,$list, in # liste in extra-delimiter einschliessen damit das pattern auch anfang/ende matchen kann
+*,orange,*) echo "The only fruit for which there is no cockney slang.";;
+esac
+

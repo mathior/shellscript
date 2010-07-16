@@ -1,0 +1,8 @@
+#!/bin/bash
+
+X :1 -ac &
+XPID=$!
+sleep 2
+DISPLAY=:1 xterm
+sleep 1
+kill $XPID

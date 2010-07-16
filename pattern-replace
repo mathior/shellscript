@@ -1,0 +1,27 @@
+#!/bin/bash
+
+function usage() {
+    echo "$0 pattern replacement"
+    echo "replaces 'pattern' by 'replacement' in each line of stdin and writes result to stdout"
+}
+
+if [ $# -eq 2 ]; then
+    PATTERN=$1
+    REPLACEMENT=$2
+else
+    usage
+    exit 0
+fi
+
+### setze IFS (internal file separator) auf newline
+IFS="
+"
+### lies von stdin
+while read LINE
+do
+    echo ${LINE//$PATTERN/$REPLACEMENT}
+done
+
+### setze IFS (internal file separator) zurueck auf standard (<space><tab><newline>)
+unset IFS
+

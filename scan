@@ -1,0 +1,118 @@
+#!/bin/bash
+
+### aufruf: find -exec ./datacollector {} \; # unfein, kein state zwischen einzelnen aufrufen...
+### find -exec echo $(collect \{\}) \; # klappt irgendwie nicht...
+### find . -type f -printf "%s %f %h\n" # auch eine moeglichkeit: %s size, %filename, %h directory
+
+### namen fuer temporaer- und ergebnisfile
+TEMP_OUT_FILE="data.tmp"
+DEFAULT_OUT_FILE="data.db"
+
+### zeigt zeilenweise numeriert den inhalt des uebergebenen files an
+function show() {
+    ### for LINE in `cat...` funktioniert nicht, da leerzeichen auseinandergenommen und als einzelne token betrachtet werden...
+    FILE_TO_SHOW=$1
+    let I=0
+    while read LINE;
+    do
+        echo $I" "$LINE
+        let I=$I+1
+    done < $FILE_TO_SHOW
+}
+
+function progress() {
+    echo -n "remaining files: $1          "
+    echo -ne "\r"
+}
+
+function usage() {
+    echo "usage: $0 directory [-n NAME]"
+    echo "scan all regular files in 'directory' and create a datafile containing these information:"
+    echo "size_(bytes):filename:full_path"
+    echo "-n NAME   -   filename for the output datafile"
+}
+
+### kommandozeilenparameter abfragen
+if [ $# -eq 0 ]; then
+    WORKING_DIR_REL="."
+    OUT_FILE="$DEFAULT_OUT_FILE"
+elif [ $# -eq 1 -a -d "$1" ]; then
+    WORKING_DIR_REL="$1"
+    OUT_FILE="$DEFAULT_OUT_FILE"
+elif [ $# -eq 2 -a "$1" == "-n" ]; then
+    WORKING_DIR_REL="."
+    OUT_FILE="$2"
+elif [ $# -eq 3 -a -d "$1" -a "$2" == "-n" ]; then
+    WORKING_DIR_REL="$1"
+    OUT_FILE="$3"
+else
+    usage
+    exit 0
+fi
+
+### test aufruf
+# echo "dir: '$WORKING_DIR_REL' outfile: '$OUT_FILE'"
+# exit 0
+
+### outfile ueberschreiben?
+if [ -f $OUT_FILE ]; then
+    echo -n "output file $OUT_FILE exists! really remove [yes|no] ? "
+    while true;
+    do
+        ANSWER=$(line)
+        if [ "$ANSWER" == "yes" ]; then
+            # files leeren
+            rm $TEMP_OUT_FILE $OUT_FILE
+            break
+        elif [ "$ANSWER" == "no" ]; then
+            exit 0
+        else
+            echo -n "please answer 'yes' or 'no' : "
+        fi
+    done
+fi
+
+### arbeitsverzeichnis vorbereiten
+WORKING_DIR_REL="."
+if [ $# -gt 0 ]; then
+    WORKING_DIR_REL="$1"
+fi
+pushd $WORKING_DIR_REL &> /dev/null
+WORKING_DIR_ABS=$(pwd)
+popd &> /dev/null
+
+echo "searching all files and folders in $WORKING_DIR_ABS..."
+
+### fuelle temp file
+find $WORKING_DIR_ABS -type f > $TEMP_OUT_FILE
+
+# show $TEMP_OUT_FILE
+
+### arbeite temp file ab
+LINENR=$(wc -l $TEMP_OUT_FILE | cut -d " " -f 1)
+
+echo "found $LINENR files, starting scan at $(date)"
+
+let LINES=$((LINENR))
+while read LINE;
+do
+    FILE_NAME=${LINE##*/}
+    DIR_NAME=${LINE%/*}
+    
+#    TYPE_HUMAN=$(file -b "$LINE")
+#    TYPE_HUMAN=${TYPE_HUMAN//:/} ### loesche doppelpunkte im string
+    
+    ### LINE muss in ls gequoted werden, sonst bringen leerzeichen das prog durcheinander
+    SIZE=$(echo `ls -l "$LINE"` | cut -d " " -f 5)
+
+#    echo "$SIZE:$FILE_NAME:$TYPE_HUMAN:$LINE" >> $OUT_FILE
+    echo "$SIZE:$FILE_NAME:$LINE" >> $OUT_FILE
+
+    let LINES=$LINES-1
+    progress $LINES   
+done < $TEMP_OUT_FILE
+
+rm $TEMP_OUT_FILE
+
+echo -e "\ndone at $(date)"
+

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ $# == 1 ];
+then
+  INFILE="$1";
+  #remove html tags, newlines, collapse whitespace, remove *
+  cat "$INFILE" | sed 's/<[^>]*>//g' | sed '{:q;N;s/\n/ /g;t q}' | sed 's/\t\{1,\}/ /g;s/^ *//;s/ *$//;s/ \{1,\}/ /g' | sed 's/\*//g' > "$INFILE".txt
+else
+  echo "usage: $0 HTMLfile"
+fi
+
