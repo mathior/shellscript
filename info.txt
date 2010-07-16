@@ -6,5 +6,3 @@ zu verwenden. Ersteres sorgt dafuer, dass das Skript abbricht, wenn ein
 Statement einen non-true Rueckgabewert hat. Zweiteres bricht ab, wenn man eine
 unbelegte Variable nutzen will.
 
-git clone|add|commit|push funktioniert auch wenn die git-installation auf diesem
-rechner irgendwie seltsam unvollständig aussieht.
